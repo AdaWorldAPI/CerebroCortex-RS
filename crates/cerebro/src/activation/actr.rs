@@ -89,4 +89,37 @@ mod tests {
         let expected = -1.902_680_9_f32;
         assert!((b - expected).abs() < 1e-4, "got {b}, expected {expected}");
     }
+    // P0: deterministic replay contracts before any SoA backend substitution.
+    #[test]
+    fn replay_is_independent_of_access_order() {
+        let now = now_fixed();
+        let chronological = vec![
+            now - Duration::seconds(86_400),
+            now - Duration::seconds(3_600),
+            now - Duration::seconds(60),
+        ];
+        let mut reversed = chronological.clone();
+        reversed.reverse();
+        let a = base_level_activation(&chronological, now, 0.5);
+        let b = base_level_activation(&reversed, now, 0.5);
+        assert!((a - b).abs() < 1e-5, "access order changed activation: {a} vs {b}");
+    }
+
+    #[test]
+    fn replay_clamps_zero_and_future_access_to_minimum_age() {
+        let now = now_fixed();
+        let at_now = base_level_activation(&[now], now, 0.5);
+        let in_future = base_level_activation(&[now + Duration::seconds(30)], now, 0.5);
+        assert!(at_now.is_finite());
+        assert_eq!(at_now, in_future, "minimum-age clamp changed");
+    }
+
+    #[test]
+    fn replay_more_accesses_increase_activation() {
+        let now = now_fixed();
+        let one = vec![now - Duration::seconds(60)];
+        let two = vec![one[0], now - Duration::seconds(3_600)];
+        assert!(base_level_activation(&two, now, 0.5) > base_level_activation(&one, now, 0.5));
+    }
+
 }
