@@ -378,4 +378,50 @@ mod tests {
         assert!(activated.contains_key(&neighbor),
             "the association-only neighbor must be reachable past 50 seeds");
     }
+    // P0 isolation: an invisible bridge must neither activate nor relay to
+    // another visible node. Trace events must obey the same visibility gate.
+    #[test]
+    fn invisible_bridge_cannot_relay_activation() {
+        let mut g: Graph<MemoryId, AssociativeLink> = Graph::new();
+        let a = g.add_node(MemoryId("public-seed".into()));
+        let b = g.add_node(MemoryId("private-bridge".into()));
+        let c = g.add_node(MemoryId("public-target".into()));
+        g.add_edge(a, b, link());
+        g.add_edge(b, c, link());
+        let visibility = HashMap::from([(a, true), (b, false), (c, true)]);
+        let (activated, events) = spread_events(&g, &[(a, 1.0)], &visibility);
+        assert!(activated.contains_key(&a));
+        assert!(!activated.contains_key(&b), "private bridge leaked into recall");
+        assert!(!activated.contains_key(&c), "private bridge relayed activation");
+        assert!(events.is_empty(), "private bridge produced a trace");
+    }
+
+    #[test]
+    fn missing_visibility_is_deny_by_default() {
+        let mut g: Graph<MemoryId, AssociativeLink> = Graph::new();
+        let a = g.add_node(MemoryId("seed".into()));
+        let b = g.add_node(MemoryId("unclassified".into()));
+        g.add_edge(a, b, link());
+        let visibility = HashMap::from([(a, true)]);
+        let (activated, events) = spread_events(&g, &[(a, 1.0)], &visibility);
+        assert!(!activated.contains_key(&b));
+        assert!(events.is_empty());
+    }
+
+    #[test]
+    fn visible_target_does_not_gain_from_hidden_neighbor() {
+        let mut g: Graph<MemoryId, AssociativeLink> = Graph::new();
+        let a = g.add_node(MemoryId("seed".into()));
+        let b = g.add_node(MemoryId("visible".into()));
+        let hidden = g.add_node(MemoryId("hidden".into()));
+        g.add_edge(a, b, link());
+        g.add_edge(b, hidden, link());
+        let with_hidden = HashMap::from([(a, true), (b, true), (hidden, false)]);
+        let without_hidden = HashMap::from([(a, true), (b, true)]);
+        let (first, events) = spread_events(&g, &[(a, 1.0)], &with_hidden);
+        let (second, _) = spread_events(&g, &[(a, 1.0)], &without_hidden);
+        assert_eq!(first, second, "hidden nodes affected visible scores");
+        assert!(events.iter().all(|e| e.source != hidden && e.target != hidden));
+    }
+
 }
