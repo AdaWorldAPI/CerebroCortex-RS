@@ -165,4 +165,25 @@ mod tests {
         let new_d = update_difficulty_on_recall(5.0, 0.5);
         assert!((new_d - 5.0).abs() < 1e-4, "got {new_d}");
     }
+    // P0 replay: pin the forgetting curve across a representative fixed grid.
+    #[test]
+    fn replay_retrievability_grid() {
+        for stability in [0.1_f32, 1.0, 2.0, 30.0] {
+            for elapsed in [0.0_f32, 1.0, 7.0, 30.0, 270.0] {
+                let expected = 9.0 * stability / (9.0 * stability + elapsed);
+                let actual = retrievability(elapsed, stability);
+                assert!((actual - expected).abs() < 1e-6,
+                    "elapsed={elapsed}, stability={stability}: {actual} != {expected}");
+            }
+        }
+    }
+
+    #[test]
+    fn replay_retrievability_decays_with_age_and_increases_with_stability() {
+        for stability in [0.1_f32, 1.0, 30.0] {
+            assert!(retrievability(1.0, stability) > retrievability(7.0, stability));
+        }
+        assert!(retrievability(7.0, 30.0) > retrievability(7.0, 1.0));
+    }
+
 }

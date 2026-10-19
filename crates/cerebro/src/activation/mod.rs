@@ -81,4 +81,26 @@ mod tests {
         let s = recall_score(0.8, -0.5, 0.1, 0.7, 0.6);
         assert!((0.0..=1.0).contains(&s), "out of range: {s}");
     }
+    // P0: keep distinct retrieval signals measurable before SoA replacement.
+    #[test]
+    fn replay_combined_score_is_repeatable() {
+        let inputs = (0.8, -0.5, 0.1, 0.7, 0.6);
+        let a = recall_score(inputs.0, inputs.1, inputs.2, inputs.3, inputs.4);
+        let b = recall_score(inputs.0, inputs.1, inputs.2, inputs.3, inputs.4);
+        assert_eq!(a.to_bits(), b.to_bits());
+    }
+
+    #[test]
+    fn replay_recall_score_responds_to_independent_signals() {
+        let baseline = recall_score(0.2, -0.5, 0.0, 0.2, 0.2);
+        assert!(recall_score(0.8, -0.5, 0.0, 0.2, 0.2) > baseline,
+            "vector similarity must affect score");
+        assert!(recall_score(0.2, 0.5, 0.0, 0.2, 0.2) > baseline,
+            "activation must affect score");
+        assert!(recall_score(0.2, -0.5, 0.0, 0.8, 0.2) > baseline,
+            "retrievability must affect score");
+        assert!(recall_score(0.2, -0.5, 0.0, 0.2, 0.8) > baseline,
+            "salience must affect score");
+    }
+
 }
