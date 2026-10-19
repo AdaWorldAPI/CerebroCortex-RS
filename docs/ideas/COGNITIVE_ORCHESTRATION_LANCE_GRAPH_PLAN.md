@@ -133,6 +133,12 @@ wrong. A historically effective procedure may be inappropriate now. Any
 quantization into compact registers must document error bounds and preserve
 this separation.
 
+**Motivation is a fourth, optional signal.** An OpenPsi- or
+Ada-rs-style goal/drive provider may propose priorities, but it cannot
+silently override evidence quality, visibility checks, or effect permissions.
+That provider must be replaceable and is not a prerequisite for ACT-R
+production matching.
+
 ### 3.4 A bounded active workspace, not a bounded knowledge store
 
 Prototype a **maximum of 64 active thought slots**, configurable as an
@@ -260,6 +266,14 @@ path earns replacement.
   replications.
 - Require a **negative-result path**: if a masking, scheduling, or topology
   mechanism does not improve the predeclared metric, retain the baseline.
+
+**Optional statistical API exploration:** JC can expose the statistics
+through a restricted R-style formula frontend (for example, `score ~ cohort`)
+or through an external R adapter. That frontend should compile *statistical
+intent* into a typed relational plan, accumulate sufficient statistics over
+selected SoA lanes, and call JC as the mathematical authority. This is not a
+proposal to embed the R interpreter in the cognitive hot path. In ACT-R the
+letter R means *Rational*, not the statistical language.
 
 **Explicit rejection conditions:** scope leakage; a second authoritative
 cognitive store; undocumented changes to ACT-R/FSRS math; hidden JSON/string
